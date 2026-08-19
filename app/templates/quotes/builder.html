@@ -3,6 +3,16 @@
 {% block content %}
 <h1>{{ 'Edit quote ' + quote.quote_number if quote else ('AI draft quote' if created_by == 'ai_assisted' else 'New quote') }}</h1>
 
+<div class="help">
+  <strong>How to build this quote</strong>
+  <ol>
+    <li>Pick a customer (or leave it ad hoc) and set an expiration date and tax rate if needed.</li>
+    <li>Add line items: choose a catalog item from the dropdown (SKU, description, and price fill in automatically from your catalog) or leave it as “custom line” and type your own.</li>
+    <li>Adjust quantities and prices freely — totals recalculate as you type.</li>
+    <li>Click <em>Save quote</em>. Nothing is stored until you save; after saving you can download the branded PDF from the quote page.</li>
+  </ol>
+</div>
+
 {% if ai_notes %}
 <div class="ai-panel">
   <strong>✨ AI draft — review before saving.</strong>

@@ -4,12 +4,18 @@
 <h1>AI task log</h1>
 <div class="settings-nav">
   <a href="/settings">General</a>
+  <a href="/settings/ai">AI provider</a>
   <a href="/settings/users">Users</a>
   <a class="active" href="/settings/ai-log">AI task log</a>
 </div>
-<p class="muted">Every AI invocation made on behalf of your organization: what was sent,
-what came back, and how the system handled it. Nothing here was written to your data
-without human confirmation.</p>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Every AI invocation made on behalf of your organization is recorded here: what was sent, what came back, which model handled it, and whether the system accepted the result.</li>
+    <li>Click an entry to expand its full input and output payloads.</li>
+    <li>Nothing the AI returned was ever written to your data without a person reviewing and confirming it first.</li>
+  </ol>
+</div>
 {% if rows %}
 {% for row in rows %}
 <details class="log-entry">

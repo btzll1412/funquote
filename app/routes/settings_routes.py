@@ -5,11 +5,87 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 
 from app import models
+from app.ai.tasks import test_connection
 from app.auth import find_user_by_email, get_repo, hash_password, require_admin
 from app.repository import OrgRepo
+from app.secret_store import decrypt_secret, encrypt_secret, mask_secret
 from app.templating import flash, render
 
 router = APIRouter(prefix="/settings")
+
+
+@router.get("/ai")
+def ai_settings(
+    request: Request,
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    settings = repo.first(models.AISettings)
+    masked = mask_secret(decrypt_secret(settings.api_key_encrypted)) if settings else ""
+    return render(request, "settings/ai.html", user=user, settings=settings,
+                  masked_key=masked, providers=models.AI_PROVIDER_CHOICES)
+
+
+@router.post("/ai")
+def save_ai_settings(
+    request: Request,
+    provider: str = Form(...),
+    model: str = Form(""),
+    api_key: str = Form(""),
+    base_url: str = Form(""),
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    valid = {key for key, _ in models.AI_PROVIDER_CHOICES}
+    if provider not in valid:
+        flash(request, "Unknown provider.", "error")
+        return RedirectResponse("/settings/ai", status_code=303)
+    if provider == "openai_compatible" and not base_url.strip():
+        flash(request, "A base URL is required for a local/custom server "
+                       "(e.g. http://192.168.1.50:11434/v1).", "error")
+        return RedirectResponse("/settings/ai", status_code=303)
+
+    settings = repo.first(models.AISettings)
+    if settings is None:
+        settings = repo.add(models.AISettings(provider=provider))
+    settings.provider = provider
+    settings.model = model.strip()
+    settings.base_url = base_url.strip()
+    # Blank key field means "keep the stored key" so admins can edit other
+    # fields without re-entering the credential.
+    if api_key.strip():
+        settings.api_key_encrypted = encrypt_secret(api_key.strip())
+    repo.commit()
+    flash(request, "AI provider saved. Use “Test connection” to verify it works.",
+          "success")
+    return RedirectResponse("/settings/ai", status_code=303)
+
+
+@router.post("/ai/test")
+def test_ai_settings(
+    request: Request,
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    settings = repo.first(models.AISettings)
+    ok, message = test_connection(repo, settings)
+    flash(request, ("✓ " if ok else "✗ Connection failed: ") + message,
+          "success" if ok else "error")
+    return RedirectResponse("/settings/ai", status_code=303)
+
+
+@router.post("/ai/clear")
+def clear_ai_settings(
+    request: Request,
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    settings = repo.first(models.AISettings)
+    if settings is not None:
+        repo.delete(settings)
+        repo.commit()
+    flash(request, "AI provider configuration removed.", "success")
+    return RedirectResponse("/settings/ai", status_code=303)
 
 
 @router.get("")

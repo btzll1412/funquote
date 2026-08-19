@@ -152,6 +152,29 @@ class QuoteVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+AI_PROVIDER_CHOICES = (
+    ("openai", "OpenAI"),
+    ("anthropic", "Anthropic (Claude)"),
+    ("google", "Google (Gemini)"),
+    ("openai_compatible", "Local / custom server (OpenAI-compatible API)"),
+)
+
+
+class AISettings(Base):
+    """Per-tenant AI provider configuration — each organization brings its
+    own account (OpenAI/Anthropic/Google) or its own local/external server."""
+
+    __tablename__ = "ai_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), index=True, unique=True)
+    provider: Mapped[str] = mapped_column(String(30))
+    model: Mapped[str] = mapped_column(String(120), default="")
+    api_key_encrypted: Mapped[str] = mapped_column(Text, default="")
+    base_url: Mapped[str] = mapped_column(String(500), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
 class AITaskLog(Base):
     __tablename__ = "ai_task_log"
 

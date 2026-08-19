@@ -2,6 +2,17 @@
 {% block title %}Dashboard — FunQuote{% endblock %}
 {% block content %}
 <h1>{{ org.name }}</h1>
+{% if n_catalog == 0 and n_quotes == 0 %}
+<div class="help">
+  <strong>Getting started — 4 steps</strong>
+  <ol>
+    <li>Fill in your <a href="/profile">business profile</a> (name, logo, contact info) — it appears on every quote PDF.</li>
+    <li>Build your <a href="/catalog">catalog</a>: add items one by one, or paste a whole price list into <a href="/catalog/import">bulk import</a>.</li>
+    <li>Add your <a href="/customers">customers</a> (or quote ad hoc without one).</li>
+    <li>Create a quote — <a href="/quotes/new">manually</a>, or with <a href="/quotes/ai-assist">✨ AI-assist</a> after an admin connects your AI account under <a href="/settings/ai">Settings → AI provider</a>.</li>
+  </ol>
+</div>
+{% endif %}
 <div class="stat-row">
   <a class="stat" href="/quotes"><span class="stat-n">{{ n_quotes }}</span> quotes</a>
   <a class="stat" href="/quotes?status=draft"><span class="stat-n">{{ n_draft }}</span> drafts</a>

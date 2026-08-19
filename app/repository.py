@@ -22,6 +22,7 @@ _SCOPED_MODELS = (
     models.Quote,
     models.QuoteItem,
     models.QuoteVersion,
+    models.AISettings,
     models.AITaskLog,
 )
 

@@ -2,7 +2,14 @@
 {% block title %}Business Profile — FunQuote{% endblock %}
 {% block content %}
 <h1>Business profile</h1>
-<p class="muted">Shown on every quote PDF your organization generates.</p>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Everything on this page appears on the quotes you generate: company name, contact details, and logo at the top of every PDF.</li>
+    <li>The footer text is printed at the bottom of every quote — use it for payment terms, validity notes, or license numbers.</li>
+    <li>Save once and every future quote PDF picks it up automatically.</li>
+  </ol>
+</div>
 <form method="post" action="/profile" enctype="multipart/form-data" class="form-narrow">
   <label>Company name<input name="company_name" value="{{ profile.company_name }}"></label>
   <label>Phone<input name="phone" value="{{ profile.phone }}"></label>

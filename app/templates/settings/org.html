@@ -4,8 +4,17 @@
 <h1>Organization settings</h1>
 <div class="settings-nav">
   <a class="active" href="/settings">General</a>
+  <a href="/settings/ai">AI provider</a>
   <a href="/settings/users">Users</a>
   <a href="/settings/ai-log">AI task log</a>
+</div>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Set your organization's display name here.</li>
+    <li>Use the AI assist toggle to turn ✨ features on or off for everyone in your organization. Off means FunQuote is a fully manual quoting tool.</li>
+    <li>To use AI assist, also connect your own AI account or server under <a href="/settings/ai">AI provider</a>.</li>
+  </ol>
 </div>
 <form method="post" action="/settings" class="form-narrow">
   <label>Organization name<input name="org_name" required value="{{ org.name }}"></label>

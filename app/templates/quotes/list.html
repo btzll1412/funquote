@@ -8,6 +8,14 @@
     <a class="btn btn-primary" href="/quotes/new">New quote</a>
   </div>
 </div>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Create a quote with <em>New quote</em> (pick items yourself) or <em>✨ AI-assist</em> (paste the customer's request and review the draft).</li>
+    <li>Open a quote to edit it, download its branded PDF, or update its status.</li>
+    <li>Track progress with the status filters below: draft → sent → accepted / rejected / expired.</li>
+  </ol>
+</div>
 <div class="filterbar">
   <a href="/quotes" class="{{ 'active' if not status_filter }}">All</a>
   {% for s in statuses %}

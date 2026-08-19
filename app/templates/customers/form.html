@@ -2,6 +2,11 @@
 {% block title %}{{ 'Edit' if customer else 'New' }} customer — FunQuote{% endblock %}
 {% block content %}
 <h1>{{ 'Edit customer' if customer else 'New customer' }}</h1>
+<div class="help">
+  <strong>How this works</strong> — only the name is required. Company, address,
+  and contact details are printed on quote PDFs for this customer; notes are
+  internal and never shown to the customer.
+</div>
 <form method="post" action="/customers/save" class="form-narrow">
   {% if customer %}<input type="hidden" name="customer_id" value="{{ customer.id }}">{% endif %}
   <label>Name<input name="name" required value="{{ customer.name if customer else '' }}"></label>

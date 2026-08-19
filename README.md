@@ -15,8 +15,35 @@ uvicorn app.main:app --reload
 
 Open http://localhost:8000, sign up to create your organization, and go.
 With the default `AI_PROVIDER=mock` everything works offline — the AI-assist
-screens use a deterministic parser. Set `AI_PROVIDER=openai` and
-`OPENAI_API_KEY` to use real extraction.
+screens use a deterministic parser until an organization connects its own
+provider.
+
+## Bring your own AI (per tenant)
+
+Each organization connects **its own** AI under *Settings → AI provider* —
+the account it already pays for, or a server it already runs. FunQuote never
+proxies through a shared key; requests go from this server straight to the
+tenant's provider with the tenant's credentials. Supported out of the box,
+each via its vendor's standard API:
+
+| Choice | API used | Structured output via |
+|---|---|---|
+| OpenAI | Chat Completions | native `json_schema` structured outputs |
+| Anthropic (Claude) | Messages API | forced tool call with `input_schema` |
+| Google (Gemini) | `generateContent` | JSON response mode |
+| Local / custom server | OpenAI-compatible chat completions against any base URL (Ollama, LM Studio, vLLM, LocalAI, gateways…) | schema-in-prompt + fence-tolerant parsing |
+
+Regardless of provider, every response is schema-validated by application
+code before use. API keys are encrypted at rest (Fernet, key derived from
+`SECRET_KEY`) and only ever displayed masked. A **Test connection** button
+sends one minimal request so admins can verify their credentials/endpoint;
+tests are logged in the AI task log like any other call.
+
+The `AI_PROVIDER` env var is only a server-wide *fallback* for organizations
+that haven't configured their own provider: `none` (recommended for
+multi-tenant production — forces per-tenant setup), `mock` (offline dev), or
+`openai` with `OPENAI_API_KEY` (single-tenant convenience). An org's own
+configuration always wins.
 
 ## Quick start (Docker)
 
@@ -59,6 +86,10 @@ PostgreSQL, set `DATABASE_URL` (see `docker-compose.yml`).
   admin-only viewer under Settings.
 - **AI on/off toggle** — per-organization, under Settings. With AI off the
   system is a fully manual quoting tool.
+- **Per-tenant AI provider** — see *Bring your own AI* above.
+- **Guided UI** — every screen carries step-by-step "How this works"
+  instructions (quote builder, AI assist, imports, settings, provider
+  connection), so new tenants can self-serve without documentation.
 
 ## Architecture
 
@@ -72,11 +103,11 @@ PostgreSQL, set `DATABASE_URL` (see `docker-compose.yml`).
 - **PDF:** ReportLab (pure Python)
 - **AI:** all calls go through `app/ai/tasks.py` (`ai_task(task_type,
   payload, repo=...)`) — one narrow, stateless task per type with a fixed
-  JSON schema, schema-validated output, and mandatory logging. The provider
-  itself is behind `app/ai/provider.py` (`AIProvider` interface): OpenAI
-  Chat Completions with Structured Outputs today; swapping to another vendor
-  is a contained change. The AI never sees prices, never touches the
-  database, and is only ever invoked explicitly by application code.
+  JSON schema, schema-validated output, and mandatory logging. Providers
+  live behind `app/ai/provider.py` (`AIProvider` interface) and are resolved
+  per organization from its stored settings (`build_provider`). The AI never
+  sees prices, never touches the database, and is only ever invoked
+  explicitly by application code.
 
 ### AI task types
 
@@ -108,8 +139,10 @@ app/
   repository.py     OrgRepo — the tenant-scoping enforcement point
   auth.py           password hashing, session auth, role checks
   pdf.py            branded quote PDF (ReportLab)
+  secret_store.py   encryption-at-rest for tenant AI keys
   ai/
-    provider.py     AIProvider interface, OpenAI + offline mock
+    provider.py     AIProvider interface: OpenAI, Anthropic, Gemini,
+                    OpenAI-compatible (local), offline mock
     tasks.py        ai_task() — task registry, schemas, validation, logging
   routes/           one module per feature area
   templates/        Jinja2 pages

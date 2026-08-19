@@ -14,7 +14,7 @@ Guarantees enforced here:
 import json
 
 from app import models
-from app.ai.provider import AIProviderError, get_provider
+from app.ai.provider import AIProviderError, build_provider
 from app.repository import OrgRepo
 
 
@@ -184,8 +184,13 @@ def ai_task(task_type: str, payload: dict, *, repo: OrgRepo) -> dict:
     if org is None or not org.ai_enabled:
         raise AITaskError("AI assist is disabled for this organization")
 
-    provider = get_provider()
-    model_used = getattr(provider, "model", provider.name)
+    # Each organization uses its own configured provider (its own account
+    # or its own local/external server).
+    try:
+        provider = build_provider(repo.first(models.AISettings))
+    except AIProviderError as e:
+        raise AITaskError(str(e)) from e
+    model_used = f"{provider.name}:{provider.model}" if provider.model else provider.name
 
     try:
         output = provider.complete_structured(
@@ -205,6 +210,44 @@ def ai_task(task_type: str, payload: dict, *, repo: OrgRepo) -> dict:
 
     _log(repo, task_type, payload, output, model_used, "success")
     return output
+
+
+def provider_configured(repo: OrgRepo) -> bool:
+    """True if this org can make AI calls (own settings or server fallback)."""
+    try:
+        build_provider(repo.first(models.AISettings))
+        return True
+    except AIProviderError:
+        return False
+
+
+def test_connection(repo: OrgRepo, settings: models.AISettings | None) -> tuple[bool, str]:
+    """Fire a minimal structured request at the org's configured provider so
+    an admin can verify their credentials/endpoint. Logged like any AI call."""
+    schema = {
+        "type": "object",
+        "properties": {"ok": {"type": "boolean"}},
+        "required": ["ok"],
+        "additionalProperties": False,
+    }
+    payload = {"ping": "connection test"}
+    try:
+        provider = build_provider(settings)
+    except AIProviderError as e:
+        return False, str(e)
+    model_used = f"{provider.name}:{provider.model}" if provider.model else provider.name
+    try:
+        output = provider.complete_structured(
+            system='Reply with {"ok": true}. This is a connectivity test.',
+            user=json.dumps(payload),
+            json_schema=schema,
+        )
+        _validate(output, schema)
+    except (AIProviderError, AITaskError) as e:
+        _log(repo, "connection_test", payload, {"error": str(e)}, model_used, "error")
+        return False, str(e)
+    _log(repo, "connection_test", payload, output, model_used, "success")
+    return True, f"Connected to {model_used}."
 
 
 def build_catalog_summary(repo: OrgRepo) -> list[dict]:

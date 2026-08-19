@@ -11,7 +11,11 @@ templates.env.filters["tojson_attr"] = lambda v: json.dumps(v)
 
 
 def flash(request: Request, message: str, category: str = "info") -> None:
-    request.session.setdefault("_flashes", []).append([category, message])
+    # Reassign (not mutate in place) so SessionMiddleware sees the session as
+    # modified and persists the cookie — nested mutations are not tracked.
+    flashes = list(request.session.get("_flashes", []))
+    flashes.append([category, message])
+    request.session["_flashes"] = flashes
 
 
 def render(request: Request, template_name: str, user=None, **context):

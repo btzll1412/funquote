@@ -2,8 +2,15 @@
 {% block title %}Review import — FunQuote{% endblock %}
 {% block content %}
 <h1>Review parsed items</h1>
-<p class="muted">Edit anything below. Only checked rows are imported. Rows flagged as
-possible duplicates are unchecked by default.</p>
+<div class="help">
+  <strong>Review before anything is saved</strong>
+  <ol>
+    <li>Every field below is editable — fix names, SKUs, and prices directly in the table.</li>
+    <li>Only rows with a ticked checkbox are imported. Rows highlighted yellow look like duplicates of items you already have and start unticked.</li>
+    <li>The “AI notes” column shows anything the AI was unsure about — double-check those rows.</li>
+    <li>Click <em>Import checked items</em> when you're happy; nothing is written until then.</li>
+  </ol>
+</div>
 <form method="post" action="/catalog/import/confirm">
 <table class="table">
   <thead><tr><th></th><th>Name</th><th>SKU</th><th>Cost</th><th>Sell</th><th>Category</th><th>AI notes</th></tr></thead>

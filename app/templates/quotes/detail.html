@@ -12,6 +12,14 @@
   </div>
 </div>
 
+<div class="help">
+  <strong>Next steps</strong>
+  <ol>
+    <li><em>Download PDF</em> to get the branded quote to send to your customer.</li>
+    <li>After sending it, mark the quote <em>Sent</em> below so your team can track it.</li>
+    <li>When the customer responds, mark it <em>Accepted</em> or <em>Rejected</em>. Use <em>Edit</em> any time to revise — every save keeps a version snapshot.</li>
+  </ol>
+</div>
 <div class="detail-meta">
   <div><strong>Customer:</strong> {{ quote.customer.name if quote.customer else '— ad hoc —' }}
     {% if quote.customer and quote.customer.company %}({{ quote.customer.company }}){% endif %}</div>

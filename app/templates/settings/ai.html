@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}AI provider — FunQuote{% endblock %}
+{% block content %}
+<h1>AI provider</h1>
+<div class="settings-nav">
+  <a href="/settings">General</a>
+  <a class="active" href="/settings/ai">AI provider</a>
+  <a href="/settings/users">Users</a>
+  <a href="/settings/ai-log">AI task log</a>
+</div>
+
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Your organization connects its <em>own</em> AI account or server here — one you already pay for or run yourself. FunQuote never bills you for AI usage; requests go straight from this server to your provider using your credentials.</li>
+    <li>Pick a provider below, enter your API key (and base URL for a local/custom server), and save.</li>
+    <li>Click <em>Test connection</em> — it sends one tiny request to verify your credentials and endpoint work.</li>
+    <li>Once connected, ✨ AI-assist quoting and bulk catalog import use your provider. Every call is recorded in the <a href="/settings/ai-log">AI task log</a>.</li>
+  </ol>
+  Your API key is stored encrypted and only ever shown masked. The AI is never sent your prices and can never write to your data — it only suggests drafts that you review.
+</div>
+
+{% if settings %}
+<p>Currently connected: <strong>{{ dict(providers)[settings.provider] }}</strong>
+   {% if settings.model %}· model <span class="mono">{{ settings.model }}</span>{% endif %}
+   {% if settings.base_url %}· <span class="mono">{{ settings.base_url }}</span>{% endif %}</p>
+<div class="actions">
+  <form method="post" action="/settings/ai/test" class="inline"><button class="btn">Test connection</button></form>
+  <form method="post" action="/settings/ai/clear" class="inline"
+        onsubmit="return confirm('Remove the AI provider configuration? AI-assist will stop working until a new one is connected.')">
+    <button class="btn danger">Remove configuration</button></form>
+</div>
+{% else %}
+<p class="muted">No provider connected yet — AI-assist features are unavailable until you connect one. Everything else in FunQuote works without it.</p>
+{% endif %}
+
+<form method="post" action="/settings/ai" class="form-narrow">
+  <label>Provider
+    <select name="provider" id="provider-select" onchange="updateHints()">
+      {% for key, label in providers %}
+      <option value="{{ key }}" {{ 'selected' if settings and settings.provider == key }}>{{ label }}</option>
+      {% endfor %}
+    </select></label>
+
+  <label>API key
+    <input name="api_key" type="password" autocomplete="off"
+           placeholder="{{ masked_key if masked_key else 'Paste your API key' }}">
+    {% if masked_key %}<span class="muted small">A key is stored ({{ masked_key }}). Leave blank to keep it; paste a new one to replace it.</span>{% endif %}
+  </label>
+
+  <label>Model <span class="muted">(optional — a sensible default is used if blank)</span>
+    <input name="model" value="{{ settings.model if settings else '' }}"
+           placeholder="e.g. gpt-4o-mini / claude-sonnet-5 / gemini-2.0-flash / llama3.1">
+  </label>
+
+  <label>Base URL <span class="muted">(required for local/custom server; optional override otherwise)</span>
+    <input name="base_url" value="{{ settings.base_url if settings else '' }}"
+           placeholder="e.g. http://192.168.1.50:11434/v1">
+  </label>
+
+  <div class="help" id="hint-openai">
+    <strong>Connecting OpenAI</strong>
+    <ol>
+      <li>Create an API key at <span class="mono">platform.openai.com → API keys</span>.</li>
+      <li>Paste it above. Model examples: <span class="mono">gpt-4o-mini</span> (fast/cheap) or <span class="mono">gpt-4o</span>.</li>
+      <li>Leave Base URL blank unless you use a gateway/Azure-style proxy.</li>
+    </ol>
+  </div>
+  <div class="help" id="hint-anthropic">
+    <strong>Connecting Anthropic (Claude)</strong>
+    <ol>
+      <li>Create an API key at <span class="mono">console.anthropic.com → API keys</span>.</li>
+      <li>Paste it above. Model examples: <span class="mono">claude-sonnet-5</span> or <span class="mono">claude-haiku-4-5</span>.</li>
+      <li>Leave Base URL blank unless you use a proxy.</li>
+    </ol>
+  </div>
+  <div class="help" id="hint-google">
+    <strong>Connecting Google (Gemini)</strong>
+    <ol>
+      <li>Create an API key at <span class="mono">aistudio.google.com → Get API key</span>.</li>
+      <li>Paste it above. Model examples: <span class="mono">gemini-2.0-flash</span> or <span class="mono">gemini-1.5-pro</span>.</li>
+      <li>Leave Base URL blank unless you use a proxy.</li>
+    </ol>
+  </div>
+  <div class="help" id="hint-openai_compatible">
+    <strong>Connecting your own local or external AI server</strong>
+    <ol>
+      <li>Works with any server exposing the standard OpenAI-compatible chat API: Ollama, LM Studio, vLLM, LocalAI, text-generation-webui, or a hosted gateway.</li>
+      <li>Set Base URL to your server's API root, e.g. <span class="mono">http://192.168.1.50:11434/v1</span> (Ollama) or <span class="mono">http://localhost:1234/v1</span> (LM Studio).</li>
+      <li>Set Model to a model your server has loaded, e.g. <span class="mono">llama3.1</span>.</li>
+      <li>API key is optional — only if your server requires one.</li>
+      <li>Make sure this FunQuote server can reach that address on your network.</li>
+    </ol>
+  </div>
+
+  <button class="btn btn-primary">Save provider</button>
+</form>
+
+<script>
+function updateHints() {
+  const sel = document.getElementById('provider-select').value;
+  for (const key of ['openai', 'anthropic', 'google', 'openai_compatible']) {
+    document.getElementById('hint-' + key).style.display = (key === sel) ? '' : 'none';
+  }
+}
+updateHints();
+</script>
+{% endblock %}

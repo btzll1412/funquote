@@ -89,6 +89,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #93c5fd; border-c
 .totals-box div { display: flex; justify-content: space-between; padding: 0.15rem 0; }
 .totals-box .grand { font-weight: 700; border-top: 1px solid #e5e7eb; margin-top: 0.3rem; padding-top: 0.45rem; }
 
+.help { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a5f; padding: 0.8rem 1rem;
+  border-radius: 8px; margin: 0.6rem 0 1rem; font-size: 0.9rem; }
+.help ol, .help ul { margin: 0.4rem 0 0.2rem; padding-left: 1.3rem; }
+.help li { margin-bottom: 0.25rem; }
+.help strong { display: block; margin-bottom: 0.2rem; }
+
 .ai-panel { background: #ede9fe; border: 1px solid #ddd6fe; color: #4c1d95; padding: 0.8rem 1rem;
   border-radius: 8px; margin-bottom: 1rem; }
 .unmatched-row { background: #fef9c3; }

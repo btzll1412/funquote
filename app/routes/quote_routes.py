@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
 from app import models
-from app.ai.tasks import AITaskError, ai_task, build_catalog_summary
+from app.ai.tasks import AITaskError, ai_task, build_catalog_summary, provider_configured
 from app.auth import get_current_user, get_repo
 from app.pdf import render_quote_pdf
 from app.repository import OrgRepo, next_quote_number
@@ -177,7 +177,7 @@ def ai_assist_form(
     org = repo.db.get(models.Organization, repo.organization_id)
     customers = repo.list(models.Customer, order_by=models.Customer.name)
     return render(request, "quotes/ai_assist.html", user=user, org=org,
-                  customers=customers)
+                  customers=customers, ai_configured=provider_configured(repo))
 
 
 @router.post("/ai-assist")

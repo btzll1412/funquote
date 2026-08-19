@@ -4,9 +4,22 @@
 <h1>Bulk catalog import</h1>
 {% if not org.ai_enabled %}
 <div class="flash flash-error">AI assist is disabled for your organization. An admin can enable it under Settings.</div>
+{% elif not ai_configured %}
+<div class="flash flash-error">No AI provider is connected for your organization yet.
+An admin can connect your own AI account or server under
+<a href="/settings/ai">Settings → AI provider</a>. Until then you can
+<a href="/catalog/new">add items manually</a>.</div>
 {% else %}
-<p class="muted">Paste a price list, vendor sheet, or any product text. The AI parses it into
-structured items; <strong>nothing is saved until you review and confirm</strong> on the next screen.</p>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Paste any product list — a vendor price sheet, a spreadsheet copy-paste, or plain text.</li>
+    <li>Optionally tell the AI how to read it (e.g. “first price is my cost, second is sell”).</li>
+    <li>Click <em>Parse with AI</em>. Nothing is saved yet.</li>
+    <li>On the next screen, review every parsed row, fix anything, untick what you don't want, and check the duplicate warnings.</li>
+    <li>Click <em>Import checked items</em> — only then are items written to your catalog.</li>
+  </ol>
+</div>
 <form method="post" action="/catalog/import/parse">
   <label>Raw product list
     <textarea name="raw_pasted_text" rows="12" required

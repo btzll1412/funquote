@@ -3,7 +3,14 @@
 {% block content %}
 <div class="auth-box">
   <h1>Create your organization</h1>
-  <p class="muted">Sets up a new isolated workspace: your catalog, customers, and quotes.</p>
+  <div class="help">
+    <strong>What happens when you sign up</strong>
+    <ol>
+      <li>A private workspace is created for your company — your catalog, customers, quotes, and branding, invisible to anyone else.</li>
+      <li>You become its first admin and can invite teammates later under Settings → Users.</li>
+      <li>Optionally connect your own AI account or server afterwards to unlock ✨ AI-assisted quoting.</li>
+    </ol>
+  </div>
   <form method="post" action="/signup">
     <label>Organization / company name
       <input name="org_name" required value="{{ org_name or '' }}"></label>

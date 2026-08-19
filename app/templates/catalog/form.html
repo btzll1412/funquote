@@ -2,6 +2,14 @@
 {% block title %}{{ 'Edit' if item else 'New' }} catalog item — FunQuote{% endblock %}
 {% block content %}
 <h1>{{ 'Edit catalog item' if item else 'New catalog item' }}</h1>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Name is required; SKU/model number is recommended — it's how AI-assist matches customer requests to this item.</li>
+    <li>Enter your cost price, then <em>either</em> a sell price <em>or</em> a markup % — the missing one is computed for you.</li>
+    <li>Add custom fields for industry-specific specs you want to track.</li>
+  </ol>
+</div>
 <form method="post" action="/catalog/save" class="form-narrow">
   {% if item %}<input type="hidden" name="item_id" value="{{ item.id }}">{% endif %}
   <label>Name<input name="name" required value="{{ item.name if item else '' }}"></label>

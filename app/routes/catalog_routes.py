@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from app import models
-from app.ai.tasks import AITaskError, ai_task
+from app.ai.tasks import AITaskError, ai_task, provider_configured
 from app.auth import get_current_user, get_repo
 from app.repository import OrgRepo
 from app.templating import flash, render
@@ -157,7 +157,8 @@ def import_form(
     repo: OrgRepo = Depends(get_repo),
 ):
     org = repo.db.get(models.Organization, repo.organization_id)
-    return render(request, "catalog/import.html", user=user, org=org)
+    return render(request, "catalog/import.html", user=user, org=org,
+                  ai_configured=provider_configured(repo))
 
 
 @router.post("/import/parse")
