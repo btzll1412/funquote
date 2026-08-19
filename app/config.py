@@ -23,3 +23,17 @@ AI_PROVIDER = os.environ.get("AI_PROVIDER", "mock")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "./data/uploads"))
+
+# Outbound email (invites, password resets). With SMTP_HOST unset the app
+# runs in "console mode": emails are printed to the server log instead, and
+# invite links are additionally shown to the admin in the UI to copy.
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+SMTP_FROM = os.environ.get("SMTP_FROM", "")
+SMTP_SECURITY = os.environ.get("SMTP_SECURITY", "starttls")  # starttls / ssl / none
+
+# Public base URL used in emailed links (e.g. https://quotes.example.com).
+# Defaults to the URL the request came in on.
+APP_BASE_URL = os.environ.get("APP_BASE_URL", "")

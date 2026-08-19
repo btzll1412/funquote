@@ -16,6 +16,7 @@ from app import models
 # Tables OrgRepo is allowed to touch. Organization/User are account-level and
 # handled separately in auth code.
 _SCOPED_MODELS = (
+    models.UserInvite,
     models.BusinessProfile,
     models.CatalogItem,
     models.Customer,

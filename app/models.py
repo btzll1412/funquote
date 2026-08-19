@@ -47,6 +47,21 @@ class User(Base):
     organization: Mapped[Organization] = relationship(back_populates="users")
 
 
+class UserInvite(Base):
+    """Pending email invitation to join an organization. The invitee sets
+    their own password via a signed link; the row is deleted on acceptance."""
+
+    __tablename__ = "user_invites"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), index=True)
+    email: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(200))
+    role: Mapped[str] = mapped_column(String(20), default="staff")
+    invited_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class BusinessProfile(Base):
     __tablename__ = "business_profile"
 

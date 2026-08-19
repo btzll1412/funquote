@@ -16,7 +16,7 @@
   <a href="/profile">Business Profile</a>
   {% if user.role == 'admin' %}<a href="/settings">Settings</a>{% endif %}
   <span class="spacer"></span>
-  <span class="whoami">{{ user.name }} · {{ user.organization.name }}</span>
+  <a href="/account" class="whoami">{{ user.name }} · {{ user.organization.name }}</a>
   <form method="post" action="/logout" class="inline"><button class="btn-link">Log out</button></form>
 </nav>
 {% endif %}

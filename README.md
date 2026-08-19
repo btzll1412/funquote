@@ -39,6 +39,16 @@ code before use. API keys are encrypted at rest (Fernet, key derived from
 sends one minimal request so admins can verify their credentials/endpoint;
 tests are logged in the AI task log like any other call.
 
+## Email (invites & password resets)
+
+Configure standard SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
+`SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_SECURITY` = starttls/ssl/none, and
+`APP_BASE_URL` for the links). Without SMTP the app still works fully:
+invite links are shown in the admin UI to copy/send manually, and
+password-reset links are printed to the server log (never shown in the UI).
+Invite and reset links are signed and expiring (itsdangerous); reset tokens
+embed a fragment of the current password hash so they die on first use.
+
 The `AI_PROVIDER` env var is only a server-wide *fallback* for organizations
 that haven't configured their own provider: `none` (recommended for
 multi-tenant production — forces per-tenant setup), `mock` (offline dev), or
@@ -58,7 +68,10 @@ PostgreSQL, set `DATABASE_URL` (see `docker-compose.yml`).
 ## What's included (Phase 1 MVP)
 
 - **Multi-tenancy** — organization signup/login, admin/staff roles, per-org
-  business profile and branding. Tenant isolation is enforced at the
+  business profile and branding. Full account lifecycle: **email invites**
+  (invitee sets their own password via a signed 7-day link), **forgot/reset
+  password** (signed 2-hour single-use links), **change password** under
+  My Account, plus direct user creation for email-less setups. Tenant isolation is enforced at the
   data-access layer (`app/repository.py`): every query through `OrgRepo` is
   filtered by `organization_id`, every insert is stamped with it, so a missed
   filter in a route handler cannot leak another tenant's data.
@@ -140,6 +153,8 @@ app/
   auth.py           password hashing, session auth, role checks
   pdf.py            branded quote PDF (ReportLab)
   secret_store.py   encryption-at-rest for tenant AI keys
+  emailer.py        SMTP sending with console-mode fallback
+  tokens.py         signed expiring invite / password-reset tokens
   ai/
     provider.py     AIProvider interface: OpenAI, Anthropic, Gemini,
                     OpenAI-compatible (local), offline mock

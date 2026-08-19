@@ -7,9 +7,11 @@ from sqlalchemy import select
 from app import models
 from app.ai.tasks import test_connection
 from app.auth import find_user_by_email, get_repo, hash_password, require_admin
+from app.emailer import external_url, invite_email_body, send_email, smtp_configured
 from app.repository import OrgRepo
 from app.secret_store import decrypt_secret, encrypt_secret, mask_secret
 from app.templating import flash, render
+from app.tokens import make_invite_token
 
 router = APIRouter(prefix="/settings")
 
@@ -125,7 +127,85 @@ def list_users(
         .where(models.User.organization_id == repo.organization_id)
         .order_by(models.User.name)
     ))
-    return render(request, "settings/users.html", user=user, users=users)
+    invites = [
+        {"invite": inv,
+         "link": external_url(request, f"/invite/{make_invite_token(inv.id)}")}
+        for inv in repo.list(models.UserInvite,
+                             order_by=models.UserInvite.created_at.desc())
+    ]
+    return render(request, "settings/users.html", user=user, users=users,
+                  invites=invites, smtp_on=smtp_configured())
+
+
+def _send_invite(request: Request, org_name: str, inviter: str,
+                 invite: models.UserInvite) -> None:
+    link = external_url(request, f"/invite/{make_invite_token(invite.id)}")
+    sent, detail = send_email(
+        invite.email, f"You're invited to {org_name} on FunQuote",
+        invite_email_body(org_name, inviter, link))
+    if sent:
+        flash(request, f"Invitation emailed to {invite.email}. It expires in 7 days.",
+              "success")
+    else:
+        flash(request, f"Invitation created, but {detail}. Copy the invite "
+                       f"link from the pending invitations list below and "
+                       f"send it to {invite.email} yourself.", "info")
+
+
+@router.post("/users/invite")
+def invite_user(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    role: str = Form("staff"),
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    email = email.strip().lower()
+    if find_user_by_email(repo.db, email):
+        flash(request, "That email already has an account.", "error")
+        return RedirectResponse("/settings/users", status_code=303)
+    invite = repo.first(models.UserInvite, models.UserInvite.email == email)
+    if invite is None:
+        invite = repo.add(models.UserInvite(email=email, name=""))
+    invite.name = name.strip()
+    invite.role = role if role in ("admin", "staff") else "staff"
+    invite.invited_by_user_id = user.id
+    repo.commit()
+    org = repo.db.get(models.Organization, repo.organization_id)
+    _send_invite(request, org.name, user.name, invite)
+    return RedirectResponse("/settings/users", status_code=303)
+
+
+@router.post("/users/invites/{invite_id}/resend")
+def resend_invite(
+    request: Request,
+    invite_id: int,
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    invite = repo.get(models.UserInvite, invite_id)
+    if invite is None:
+        raise HTTPException(404)
+    org = repo.db.get(models.Organization, repo.organization_id)
+    _send_invite(request, org.name, user.name, invite)
+    return RedirectResponse("/settings/users", status_code=303)
+
+
+@router.post("/users/invites/{invite_id}/cancel")
+def cancel_invite(
+    request: Request,
+    invite_id: int,
+    user: models.User = Depends(require_admin),
+    repo: OrgRepo = Depends(get_repo),
+):
+    invite = repo.get(models.UserInvite, invite_id)
+    if invite is None:
+        raise HTTPException(404)
+    repo.delete(invite)
+    repo.commit()
+    flash(request, "Invitation cancelled — its link no longer works.", "success")
+    return RedirectResponse("/settings/users", status_code=303)
 
 
 @router.post("/users")

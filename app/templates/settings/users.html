@@ -9,13 +9,52 @@
   <a href="/settings/ai-log">AI task log</a>
 </div>
 <div class="help">
-  <strong>How this works</strong>
+  <strong>How this works — two ways to add teammates</strong>
   <ol>
-    <li>Add teammates with the form below — they log in with the email and password you set here.</li>
+    <li><em>Invite by email</em> (recommended): enter their name and email below — they get a link, choose their own password, and are signed in. Links expire after 7 days.{% if not smtp_on %} <strong>Email sending isn't configured on this server</strong>, so after inviting, copy the invite link from the pending list and send it to them yourself.{% endif %}</li>
+    <li><em>Add directly</em>: you set their password here and tell them yourself. Handy for a quick start without email.</li>
     <li><em>Staff</em> can build quotes and manage the catalog and customers. <em>Admins</em> can additionally manage settings, users, the AI provider, and view the AI task log.</li>
-    <li>Users only ever see your organization's data.</li>
+    <li>Users only ever see your organization's data. Anyone who forgets their password can use “Forgot your password?” on the login page.</li>
   </ol>
 </div>
+
+<h2>Invite by email</h2>
+<form method="post" action="/settings/users/invite" class="form-narrow">
+  <label>Name<input name="name" required></label>
+  <label>Email<input name="email" type="email" required></label>
+  <label>Role
+    <select name="role">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+    </select></label>
+  <button class="btn btn-primary">Send invitation</button>
+</form>
+
+{% if invites %}
+<h2>Pending invitations</h2>
+<table class="table">
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Invite link</th><th></th></tr></thead>
+  <tbody>
+  {% for row in invites %}
+    <tr>
+      <td>{{ row.invite.name }}</td>
+      <td>{{ row.invite.email }}</td>
+      <td><span class="badge badge-{{ row.invite.role }}">{{ row.invite.role }}</span></td>
+      <td><input readonly value="{{ row.link }}" class="mono" onclick="this.select()"></td>
+      <td class="row-actions">
+        <form method="post" action="/settings/users/invites/{{ row.invite.id }}/resend" class="inline">
+          <button class="btn-link">Resend</button></form>
+        <form method="post" action="/settings/users/invites/{{ row.invite.id }}/cancel" class="inline"
+              onsubmit="return confirm('Cancel this invitation? Its link will stop working.')">
+          <button class="btn-link danger">Cancel</button></form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Current users</h2>
 <table class="table">
   <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Added</th><th></th></tr></thead>
   <tbody>
@@ -38,7 +77,7 @@
   </tbody>
 </table>
 
-<h2>Add user</h2>
+<h2>Add user directly (no email needed)</h2>
 <form method="post" action="/settings/users" class="form-narrow">
   <label>Name<input name="name" required></label>
   <label>Email<input name="email" type="email" required></label>
