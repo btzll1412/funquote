@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Join {{ org.name }} — FunQuote{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <h1>Join {{ org.name }}</h1>
+  <div class="help">
+    <strong>You've been invited</strong>
+    <ol>
+      <li>This creates your account <span class="mono">{{ invite.email }}</span> in the {{ org.name }} workspace as {{ 'an admin' if invite.role == 'admin' else 'staff' }}.</li>
+      <li>Choose a password below (at least 8 characters).</li>
+      <li>You'll be signed in right away.</li>
+    </ol>
+  </div>
+  <form method="post" action="/invite/{{ token }}">
+    <label>Your name
+      <input value="{{ invite.name }}" disabled></label>
+    <label>Email
+      <input value="{{ invite.email }}" disabled></label>
+    <label>Choose a password
+      <input name="password" type="password" minlength="8" required autofocus></label>
+    <button class="btn btn-primary">Create my account</button>
+  </form>
+</div>
+{% endblock %}

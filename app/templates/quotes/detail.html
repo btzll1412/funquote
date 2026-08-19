@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ quote.quote_number }} — FunQuote{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Quote {{ quote.quote_number }}
+    <span class="badge badge-{{ quote.status }}">{{ quote.status }}</span>
+    {% if quote.created_by == 'ai_assisted' %}<span class="badge badge-ai">AI-assisted</span>{% endif %}
+  </h1>
+  <div>
+    <a class="btn" href="/quotes/{{ quote.id }}/edit">Edit</a>
+    <a class="btn btn-primary" href="/quotes/{{ quote.id }}/pdf">Download PDF</a>
+  </div>
+</div>
+
+<div class="help">
+  <strong>Next steps</strong>
+  <ol>
+    <li><em>Download PDF</em> to get the branded quote to send to your customer.</li>
+    <li>After sending it, mark the quote <em>Sent</em> below so your team can track it.</li>
+    <li>When the customer responds, mark it <em>Accepted</em> or <em>Rejected</em>. Use <em>Edit</em> any time to revise — every save keeps a version snapshot.</li>
+  </ol>
+</div>
+<div class="detail-meta">
+  <div><strong>Customer:</strong> {{ quote.customer.name if quote.customer else '— ad hoc —' }}
+    {% if quote.customer and quote.customer.company %}({{ quote.customer.company }}){% endif %}</div>
+  <div><strong>Created:</strong> {{ quote.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  <div><strong>Expires:</strong> {{ quote.expiration_date or '—' }}</div>
+</div>
+
+<table class="table">
+  <thead><tr><th>SKU</th><th>Description</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Total</th></tr></thead>
+  <tbody>
+  {% for i in quote.items %}
+    <tr>
+      <td class="mono">{{ i.sku_snapshot or '—' }}</td>
+      <td>{{ i.description_snapshot }}</td>
+      <td class="num">{{ '%g' % i.quantity }}</td>
+      <td class="num">{{ i.unit_price|money }}</td>
+      <td class="num">{{ i.line_total|money }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="totals-box">
+  <div>Subtotal <span>{{ quote.subtotal|money }}</span></div>
+  {% if quote.tax_rate %}<div>Tax ({{ '%g' % quote.tax_rate }}%) <span>{{ quote.tax|money }}</span></div>{% endif %}
+  <div class="grand">Total <span>{{ quote.total|money }}</span></div>
+</div>
+
+{% if quote.notes %}<h3>Notes</h3><p>{{ quote.notes }}</p>{% endif %}
+
+<h3>Status</h3>
+<form method="post" action="/quotes/{{ quote.id }}/status" class="statusbar">
+  {% for s in statuses %}
+    <button name="status" value="{{ s }}" class="btn btn-small {{ 'btn-primary' if quote.status == s }}">{{ s.title() }}</button>
+  {% endfor %}
+</form>
+
+<form method="post" action="/quotes/{{ quote.id }}/delete" class="inline"
+      onsubmit="return confirm('Delete this quote permanently?')">
+  <button class="btn-link danger">Delete quote</button>
+</form>
+{% endblock %}

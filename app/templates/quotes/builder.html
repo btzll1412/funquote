@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit ' + quote.quote_number if quote else 'New quote' }} — FunQuote{% endblock %}
+{% block content %}
+<h1>{{ 'Edit quote ' + quote.quote_number if quote else ('AI draft quote' if created_by == 'ai_assisted' else 'New quote') }}</h1>
+
+<div class="help">
+  <strong>How to build this quote</strong>
+  <ol>
+    <li>Pick a customer (or leave it ad hoc) and set an expiration date and tax rate if needed.</li>
+    <li>Add line items: choose a catalog item from the dropdown (SKU, description, and price fill in automatically from your catalog) or leave it as “custom line” and type your own.</li>
+    <li>Adjust quantities and prices freely — totals recalculate as you type.</li>
+    <li>Click <em>Save quote</em>. Nothing is stored until you save; after saving you can download the branded PDF from the quote page.</li>
+  </ol>
+</div>
+
+{% if ai_notes %}
+<div class="ai-panel">
+  <strong>✨ AI draft — review before saving.</strong>
+  Matched items use your catalog pricing; unmatched items are highlighted with price $0.00 for you to resolve.
+  {% if ai_notes.unresolved %}
+    <div>Couldn't match to catalog: <em>{{ ai_notes.unresolved|join(', ') }}</em></div>
+  {% endif %}
+  {% if ai_notes.unmatched_notes %}
+    <div>AI notes: <em>{{ ai_notes.unmatched_notes }}</em></div>
+  {% endif %}
+</div>
+{% endif %}
+
+<form method="post" action="/quotes/save" id="quote-form">
+  {% if quote %}<input type="hidden" name="quote_id" value="{{ quote.id }}">{% endif %}
+  <input type="hidden" name="created_by" value="{{ created_by }}">
+
+  <div class="form-grid-3">
+    <label>Customer
+      <select name="customer_id">
+        <option value="">— none / ad hoc —</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}"
+          {% if quote and quote.customer_id == c.id %}selected{% elif preselected_customer == c.id %}selected{% endif %}>
+          {{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>
+        {% endfor %}
+      </select></label>
+    <label>Expiration date
+      <input type="date" name="expiration_date"
+             value="{{ quote.expiration_date if quote and quote.expiration_date else '' }}"></label>
+    <label>Tax rate %
+      <input name="tax_rate" inputmode="decimal" id="tax-rate"
+             value="{{ quote.tax_rate if quote else '0' }}"></label>
+  </div>
+
+  <h2>Line items</h2>
+  <table class="table" id="lines">
+    <thead><tr><th style="width:16rem">Catalog item</th><th style="width:8rem">SKU</th><th>Description</th>
+      <th style="width:5rem">Qty</th><th style="width:7rem">Unit price</th><th class="num" style="width:7rem">Total</th><th></th></tr></thead>
+    <tbody id="lines-body"></tbody>
+  </table>
+  <button type="button" class="btn btn-small" onclick="addLine()">+ Add line</button>
+
+  <div class="totals-box">
+    <div>Subtotal <span id="t-subtotal">$0.00</span></div>
+    <div>Tax <span id="t-tax">$0.00</span></div>
+    <div class="grand">Total <span id="t-total">$0.00</span></div>
+  </div>
+
+  <label>Notes<textarea name="notes" rows="3">{{ quote.notes if quote else '' }}</textarea></label>
+  <div class="form-actions">
+    <button class="btn btn-primary">Save quote</button>
+    <a class="btn" href="{{ '/quotes/' + quote.id|string if quote else '/quotes' }}">Cancel</a>
+  </div>
+</form>
+
+<script>
+const CATALOG = {{ catalog_json|tojson_attr|safe }};
+const money = v => '$' + (Number(v)||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+function catalogOptions(selectedId) {
+  let html = '<option value="">— custom line —</option>';
+  for (const c of CATALOG) {
+    const label = (c.sku ? c.sku + ' — ' : '') + c.name;
+    html += `<option value="${c.id}" ${String(selectedId)===String(c.id)?'selected':''}>${label.replace(/</g,'&lt;')}</option>`;
+  }
+  return html;
+}
+
+function addLine(line) {
+  line = line || {catalog_id:'', sku:'', desc:'', qty:1, price:0, matched:true};
+  const tr = document.createElement('tr');
+  if (line.matched === false) tr.className = 'unmatched-row';
+  tr.innerHTML = `
+    <td><select name="line_catalog_id" onchange="pickCatalog(this)">${catalogOptions(line.catalog_id)}</select></td>
+    <td><input name="line_sku" value="${String(line.sku).replace(/"/g,'&quot;')}" class="input-sm"></td>
+    <td><input name="line_desc" value="${String(line.desc).replace(/"/g,'&quot;')}" required></td>
+    <td><input name="line_qty" value="${line.qty}" inputmode="decimal" oninput="recalc()" class="input-xs"></td>
+    <td><input name="line_price" value="${line.price}" inputmode="decimal" oninput="recalc()" class="input-xs"></td>
+    <td class="num line-total">$0.00</td>
+    <td><button type="button" class="btn-link danger" onclick="this.closest('tr').remove(); recalc()">✕</button></td>`;
+  document.getElementById('lines-body').appendChild(tr);
+  recalc();
+}
+
+function pickCatalog(sel) {
+  const tr = sel.closest('tr');
+  const c = CATALOG.find(x => String(x.id) === sel.value);
+  if (c) {
+    tr.querySelector('[name=line_sku]').value = c.sku;
+    tr.querySelector('[name=line_desc]').value = c.name;
+    tr.querySelector('[name=line_price]').value = c.price;
+    tr.classList.remove('unmatched-row');
+  }
+  recalc();
+}
+
+function recalc() {
+  let subtotal = 0;
+  for (const tr of document.querySelectorAll('#lines-body tr')) {
+    const qty = Number(tr.querySelector('[name=line_qty]').value) || 0;
+    const price = Number(tr.querySelector('[name=line_price]').value) || 0;
+    const total = qty * price;
+    subtotal += total;
+    tr.querySelector('.line-total').textContent = money(total);
+  }
+  const rate = Number(document.getElementById('tax-rate').value) || 0;
+  const tax = subtotal * rate / 100;
+  document.getElementById('t-subtotal').textContent = money(subtotal);
+  document.getElementById('t-tax').textContent = money(tax);
+  document.getElementById('t-total').textContent = money(subtotal + tax);
+}
+document.getElementById('tax-rate').addEventListener('input', recalc);
+
+{% if prefill_lines %}
+for (const line of {{ prefill_lines|tojson_attr|safe }}) addLine(line);
+{% elif quote %}
+{% for i in quote.items %}
+addLine({catalog_id: {{ i.catalog_item_id or "''" }}, sku: {{ i.sku_snapshot|tojson_attr|safe }},
+         desc: {{ i.description_snapshot|tojson_attr|safe }}, qty: {{ i.quantity }}, price: {{ i.unit_price }}});
+{% endfor %}
+{% else %}
+addLine();
+{% endif %}
+</script>
+{% endblock %}

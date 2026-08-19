@@ -1,0 +1,25 @@
+services:
+  funquote:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      APP_BASE_URL: ${APP_BASE_URL:-}
+      # Uncomment to use PostgreSQL instead of the bundled SQLite volume:
+      # DATABASE_URL: postgresql+psycopg://funquote:funquote@db:5432/funquote
+    volumes:
+      - funquote-data:/srv/funquote/data
+    restart: unless-stopped
+
+volumes:
+  funquote-data:

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Catalog — FunQuote{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Catalog</h1>
+  <div>
+    <a class="btn" href="/catalog/import">✨ Bulk import</a>
+    <a class="btn btn-primary" href="/catalog/new">Add item</a>
+  </div>
+</div>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Your catalog is the price list quotes are built from: each item has a cost price (what you pay) and a sell price (what you charge).</li>
+    <li>Add items one at a time with <em>Add item</em>, or paste a whole vendor list into <em>✨ Bulk import</em>.</li>
+    <li>Use custom fields on an item for anything specific to your industry (resolution, PoE class, pipe diameter…).</li>
+    <li>Deleting an item hides it from new quotes — existing quotes keep their saved prices and descriptions.</li>
+  </ol>
+</div>
+<form method="get" class="searchbar">
+  <input name="q" placeholder="Search by name, SKU, category…" value="{{ q }}">
+  <button class="btn">Search</button>
+</form>
+{% if items %}
+<table class="table">
+  <thead><tr><th>SKU</th><th>Name</th><th>Category</th>
+    <th class="num">Cost</th><th class="num">Sell</th><th class="num">Markup</th><th></th></tr></thead>
+  <tbody>
+  {% for i in items %}
+    <tr>
+      <td class="mono">{{ i.sku or '—' }}</td>
+      <td><a href="/catalog/{{ i.id }}/edit">{{ i.name }}</a></td>
+      <td>{{ i.category }}</td>
+      <td class="num">{{ i.cost_price|money if i.cost_price is not none else '—' }}</td>
+      <td class="num">{{ i.sell_price|money if i.sell_price is not none else '—' }}</td>
+      <td class="num">{{ '%g%%' % i.markup_percent if i.markup_percent is not none else '—' }}</td>
+      <td class="row-actions">
+        <form method="post" action="/catalog/{{ i.id }}/delete" class="inline"
+              onsubmit="return confirm('Delete this item? Existing quotes keep their snapshots.')">
+          <button class="btn-link danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No catalog items yet. <a href="/catalog/new">Add one</a> or <a href="/catalog/import">bulk import</a>.</p>{% endif %}
+{% endblock %}

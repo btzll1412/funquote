@@ -1,2 +1,166 @@
-# funquote
-Making Quotes with AI
+# FunQuote — Universal AI-Assisted Quoting System
+
+A self-hosted, multi-tenant quoting system usable by any company. Each
+organization (tenant) gets its own catalog, branding, users, customers, and
+quotes — fully isolated from every other tenant. Fully usable as a manual
+quoting tool; AI assist is an optional accelerator layered on top.
+
+## Quick start (local)
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env          # set SECRET_KEY at minimum
+uvicorn app.main:app --reload
+```
+
+Open http://localhost:8000, sign up to create your organization, and go.
+With the default `AI_PROVIDER=mock` everything works offline — the AI-assist
+screens use a deterministic parser until an organization connects its own
+provider.
+
+## Bring your own AI (per tenant)
+
+Each organization connects **its own** AI under *Settings → AI provider* —
+the account it already pays for, or a server it already runs. FunQuote never
+proxies through a shared key; requests go from this server straight to the
+tenant's provider with the tenant's credentials. Supported out of the box,
+each via its vendor's standard API:
+
+| Choice | API used | Structured output via |
+|---|---|---|
+| OpenAI | Chat Completions | native `json_schema` structured outputs |
+| Anthropic (Claude) | Messages API | forced tool call with `input_schema` |
+| Google (Gemini) | `generateContent` | JSON response mode |
+| Local / custom server | OpenAI-compatible chat completions against any base URL (Ollama, LM Studio, vLLM, LocalAI, gateways…) | schema-in-prompt + fence-tolerant parsing |
+
+Regardless of provider, every response is schema-validated by application
+code before use. API keys are encrypted at rest (Fernet, key derived from
+`SECRET_KEY`) and only ever displayed masked. A **Test connection** button
+sends one minimal request so admins can verify their credentials/endpoint;
+tests are logged in the AI task log like any other call.
+
+## Email (invites & password resets)
+
+Configure standard SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
+`SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_SECURITY` = starttls/ssl/none, and
+`APP_BASE_URL` for the links). Without SMTP the app still works fully:
+invite links are shown in the admin UI to copy/send manually, and
+password-reset links are printed to the server log (never shown in the UI).
+Invite and reset links are signed and expiring (itsdangerous); reset tokens
+embed a fragment of the current password hash so they die on first use.
+
+The `AI_PROVIDER` env var is only a server-wide *fallback* for organizations
+that haven't configured their own provider: `none` (recommended for
+multi-tenant production — forces per-tenant setup), `mock` (offline dev), or
+`openai` with `OPENAI_API_KEY` (single-tenant convenience). An org's own
+configuration always wins.
+
+## Quick start (Docker)
+
+```bash
+cp .env.example .env          # set SECRET_KEY
+docker compose up --build
+```
+
+Data (SQLite DB + uploaded logos) lives in the `funquote-data` volume. For
+PostgreSQL, set `DATABASE_URL` (see `docker-compose.yml`).
+
+## What's included (Phase 1 MVP)
+
+- **Multi-tenancy** — organization signup/login, admin/staff roles, per-org
+  business profile and branding. Full account lifecycle: **email invites**
+  (invitee sets their own password via a signed 7-day link), **forgot/reset
+  password** (signed 2-hour single-use links), **change password** under
+  My Account, plus direct user creation for email-less setups. Tenant isolation is enforced at the
+  data-access layer (`app/repository.py`): every query through `OrgRepo` is
+  filtered by `organization_id`, every insert is stamped with it, so a missed
+  filter in a route handler cannot leak another tenant's data.
+- **Catalog** — CRUD with cost/sell/markup (enter either; the other is
+  computed), categories, and JSON **custom fields** so any industry can track
+  its own attributes (resolution, PoE class, pipe diameter, …) without schema
+  changes. Deletes are soft so quote snapshots stay intact.
+- **Customers** — CRUD, searchable.
+- **Manual quote builder** — pick a customer (or ad hoc), add lines from the
+  catalog or custom lines, tax, expiration, notes; totals computed
+  server-side; branded **PDF** download (logo, company info, footer terms).
+  Line items snapshot SKU/description/price so old quotes stay accurate when
+  the catalog changes. Every save records a full snapshot in
+  `quote_versions` (ready for Phase 2 revision history).
+- **AI-assist quote drafting** — paste customer text → `extract_quote_items`
+  → editable draft in the same builder. Every SKU the AI returns is validated
+  against the real catalog; unmatched items are highlighted for manual
+  resolution; **pricing always comes from the database, never the AI**.
+  Nothing is saved until the user reviews and clicks Save.
+- **Bulk catalog import** — paste a price list + free-text instructions →
+  `import_catalog_items` → review screen with duplicate detection (SKU match
+  + fuzzy name match) → nothing written until confirmed.
+- **AI task log** — every AI invocation (input, raw output, model, status,
+  linked entity) recorded per organization in `ai_task_log`, with an
+  admin-only viewer under Settings.
+- **AI on/off toggle** — per-organization, under Settings. With AI off the
+  system is a fully manual quoting tool.
+- **Per-tenant AI provider** — see *Bring your own AI* above.
+- **Guided UI** — every screen carries step-by-step "How this works"
+  instructions (quote builder, AI assist, imports, settings, provider
+  connection), so new tenants can self-serve without documentation.
+
+## Architecture
+
+- **Backend:** Python / FastAPI / SQLAlchemy 2.0
+- **DB:** SQLite by default; PostgreSQL via `DATABASE_URL`
+- **Frontend:** server-rendered Jinja2 templates + a small amount of vanilla
+  JS (the quote builder). *This was the spec's open decision — templates were
+  chosen for zero build tooling and easy self-hosting; the routes are plain
+  HTTP endpoints, so a React front-end can be layered on later without
+  backend changes.*
+- **PDF:** ReportLab (pure Python)
+- **AI:** all calls go through `app/ai/tasks.py` (`ai_task(task_type,
+  payload, repo=...)`) — one narrow, stateless task per type with a fixed
+  JSON schema, schema-validated output, and mandatory logging. Providers
+  live behind `app/ai/provider.py` (`AIProvider` interface) and are resolved
+  per organization from its stored settings (`build_provider`). The AI never
+  sees prices, never touches the database, and is only ever invoked
+  explicitly by application code.
+
+### AI task types
+
+| Task | Purpose | Status |
+|---|---|---|
+| `extract_quote_items` | customer text → draft line items matched to catalog | Phase 1 |
+| `import_catalog_items` | pasted price list → structured items for review | Phase 1 |
+| `classify_quote_request` | is an email an RFQ? | defined; wired up in Phase 2 (email intake) |
+
+## Tests
+
+```bash
+python -m pytest tests/ -q
+```
+
+Covers tenant isolation (cross-org 404s, repo-layer scoping), the manual
+quote flow (totals, snapshots, per-org quote numbering, PDF, statuses),
+and the AI flows (catalog validation, no pricing sent to the AI, logging,
+review-before-write on import, org AI toggle, admin-only log viewer).
+
+## Project layout
+
+```
+app/
+  main.py           app wiring, middleware, static mounts
+  config.py         env-based configuration
+  database.py       engine/session setup
+  models.py         all tables (every tenant table has organization_id)
+  repository.py     OrgRepo — the tenant-scoping enforcement point
+  auth.py           password hashing, session auth, role checks
+  pdf.py            branded quote PDF (ReportLab)
+  secret_store.py   encryption-at-rest for tenant AI keys
+  emailer.py        SMTP sending with console-mode fallback
+  tokens.py         signed expiring invite / password-reset tokens
+  ai/
+    provider.py     AIProvider interface: OpenAI, Anthropic, Gemini,
+                    OpenAI-compatible (local), offline mock
+    tasks.py        ai_task() — task registry, schemas, validation, logging
+  routes/           one module per feature area
+  templates/        Jinja2 pages
+  static/           stylesheet
+tests/              pytest suite
+```

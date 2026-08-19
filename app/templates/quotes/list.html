@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Quotes — FunQuote{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Quotes</h1>
+  <div>
+    <a class="btn" href="/quotes/ai-assist">✨ AI-assist</a>
+    <a class="btn btn-primary" href="/quotes/new">New quote</a>
+  </div>
+</div>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Create a quote with <em>New quote</em> (pick items yourself) or <em>✨ AI-assist</em> (paste the customer's request and review the draft).</li>
+    <li>Open a quote to edit it, download its branded PDF, or update its status.</li>
+    <li>Track progress with the status filters below: draft → sent → accepted / rejected / expired.</li>
+  </ol>
+</div>
+<div class="filterbar">
+  <a href="/quotes" class="{{ 'active' if not status_filter }}">All</a>
+  {% for s in statuses %}
+    <a href="/quotes?status={{ s }}" class="{{ 'active' if status_filter == s }}">{{ s.title() }}</a>
+  {% endfor %}
+</div>
+{% if quotes %}
+<table class="table">
+  <thead><tr><th>#</th><th>Customer</th><th>Status</th><th class="num">Total</th><th>Expires</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for q in quotes %}
+    <tr>
+      <td><a href="/quotes/{{ q.id }}">{{ q.quote_number }}</a></td>
+      <td>{{ q.customer.name if q.customer else '—' }}</td>
+      <td><span class="badge badge-{{ q.status }}">{{ q.status }}</span>
+          {% if q.created_by == 'ai_assisted' %}<span class="badge badge-ai">AI</span>{% endif %}</td>
+      <td class="num">{{ q.total|money }}</td>
+      <td>{{ q.expiration_date or '—' }}</td>
+      <td>{{ q.created_at.strftime('%Y-%m-%d') }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No quotes{% if status_filter %} with status “{{ status_filter }}”{% endif %}.</p>{% endif %}
+{% endblock %}

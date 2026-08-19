@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}AI task log — FunQuote{% endblock %}
+{% block content %}
+<h1>AI task log</h1>
+<div class="settings-nav">
+  <a href="/settings">General</a>
+  <a href="/settings/ai">AI provider</a>
+  <a href="/settings/users">Users</a>
+  <a class="active" href="/settings/ai-log">AI task log</a>
+</div>
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Every AI invocation made on behalf of your organization is recorded here: what was sent, what came back, which model handled it, and whether the system accepted the result.</li>
+    <li>Click an entry to expand its full input and output payloads.</li>
+    <li>Nothing the AI returned was ever written to your data without a person reviewing and confirming it first.</li>
+  </ol>
+</div>
+{% if rows %}
+{% for row in rows %}
+<details class="log-entry">
+  <summary>
+    <span class="mono">{{ row.e.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+    <strong>{{ row.e.task_type }}</strong>
+    <span class="badge badge-{{ 'accepted' if row.e.status == 'success' else 'rejected' }}">{{ row.e.status }}</span>
+    <span class="muted">{{ row.e.model_used }}</span>
+    {% if row.e.linked_entity_type %}
+      <span class="muted">→ {{ row.e.linked_entity_type }} #{{ row.e.linked_entity_id }}</span>
+    {% endif %}
+  </summary>
+  <h4>Input</h4><pre>{{ row.input }}</pre>
+  <h4>Output</h4><pre>{{ row.output }}</pre>
+</details>
+{% endfor %}
+{% else %}<p class="muted">No AI tasks have been run yet.</p>{% endif %}
+{% endblock %}

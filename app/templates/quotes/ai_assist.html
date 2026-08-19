@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}AI-assist quote — FunQuote{% endblock %}
+{% block content %}
+<h1>✨ AI-assist quote</h1>
+{% if not org.ai_enabled %}
+<div class="flash flash-error">AI assist is disabled for your organization. An admin can enable it under Settings. You can still <a href="/quotes/new">build quotes manually</a>.</div>
+{% elif not ai_configured %}
+<div class="flash flash-error">No AI provider is connected for your organization yet.
+An admin can connect your own AI account or server under
+<a href="/settings/ai">Settings → AI provider</a>. Until then you can still
+<a href="/quotes/new">build quotes manually</a>.</div>
+{% else %}
+<div class="help">
+  <strong>How this works</strong>
+  <ol>
+    <li>Paste what the customer asked for — an email, a text message, or notes from a call.</li>
+    <li>Optionally pick which customer this is for.</li>
+    <li>Click <em>Draft quote with AI</em>. Your organization's own AI reads the request and matches items to your catalog.</li>
+    <li>You land in the quote builder with a <em>draft</em>: matched items are priced from your catalog (the AI never sets prices), and anything it couldn't match is highlighted for you to resolve.</li>
+    <li>Review, edit, then save — nothing is stored until you do.</li>
+  </ol>
+</div>
+<form method="post" action="/quotes/ai-assist">
+  <label>Customer request
+    <textarea name="customer_text" rows="10" required
+      placeholder="e.g. Hi, we need 6 outdoor cameras for the warehouse, an NVR that can handle them, and about 500ft of cable run…"></textarea></label>
+  <label>Customer (optional)
+    <select name="customer_id">
+      <option value="">— none / ad hoc —</option>
+      {% for c in customers %}<option value="{{ c.id }}">{{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>{% endfor %}
+    </select></label>
+  <button class="btn btn-primary">Draft quote with AI</button>
+  <a class="btn" href="/quotes">Cancel</a>
+</form>
+{% endif %}
+{% endblock %}
