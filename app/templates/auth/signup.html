@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Sign up — FunQuote{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <h1>Create your organization</h1>
+  <p class="muted">Sets up a new isolated workspace: your catalog, customers, and quotes.</p>
+  <form method="post" action="/signup">
+    <label>Organization / company name
+      <input name="org_name" required value="{{ org_name or '' }}"></label>
+    <label>Your name
+      <input name="name" required value="{{ name or '' }}"></label>
+    <label>Email
+      <input name="email" type="email" required value="{{ email or '' }}"></label>
+    <label>Password (min 8 characters)
+      <input name="password" type="password" minlength="8" required></label>
+    <button class="btn btn-primary">Create organization</button>
+  </form>
+  <p class="muted">Already have an account? <a href="/login">Log in</a></p>
+</div>
+{% endblock %}

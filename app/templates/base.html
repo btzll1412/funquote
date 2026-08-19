@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FunQuote{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+{% if user %}
+<nav class="topnav">
+  <a class="brand" href="/">FunQuote</a>
+  <a href="/quotes">Quotes</a>
+  <a href="/catalog">Catalog</a>
+  <a href="/customers">Customers</a>
+  <a href="/profile">Business Profile</a>
+  {% if user.role == 'admin' %}<a href="/settings">Settings</a>{% endif %}
+  <span class="spacer"></span>
+  <span class="whoami">{{ user.name }} · {{ user.organization.name }}</span>
+  <form method="post" action="/logout" class="inline"><button class="btn-link">Log out</button></form>
+</nav>
+{% endif %}
+<main class="container">
+  {% for category, message in flashes %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

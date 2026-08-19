@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Business Profile — FunQuote{% endblock %}
+{% block content %}
+<h1>Business profile</h1>
+<p class="muted">Shown on every quote PDF your organization generates.</p>
+<form method="post" action="/profile" enctype="multipart/form-data" class="form-narrow">
+  <label>Company name<input name="company_name" value="{{ profile.company_name }}"></label>
+  <label>Phone<input name="phone" value="{{ profile.phone }}"></label>
+  <label>Email<input name="email" value="{{ profile.email }}"></label>
+  <label>Website<input name="website" value="{{ profile.website }}"></label>
+  <label>Address<textarea name="address" rows="3">{{ profile.address }}</textarea></label>
+  <label>Quote footer text (terms / notes on every quote)
+    <textarea name="quote_footer_text" rows="4">{{ profile.quote_footer_text }}</textarea></label>
+  <label>Logo
+    {% if profile.logo_path %}<div><img src="/uploads/org_{{ profile.organization_id }}/{{ profile.logo_path.split('/')[-1] }}" alt="logo" class="logo-preview"></div>{% endif %}
+    <input type="file" name="logo" accept="image/*"></label>
+  <button class="btn btn-primary">Save profile</button>
+</form>
+{% endblock %}

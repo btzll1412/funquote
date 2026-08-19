@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Users — FunQuote{% endblock %}
+{% block content %}
+<h1>Users</h1>
+<div class="settings-nav">
+  <a href="/settings">General</a>
+  <a class="active" href="/settings/users">Users</a>
+  <a href="/settings/ai-log">AI task log</a>
+</div>
+<table class="table">
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Added</th><th></th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr>
+      <td>{{ u.name }}</td>
+      <td>{{ u.email }}</td>
+      <td><span class="badge badge-{{ u.role }}">{{ u.role }}</span></td>
+      <td>{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+      <td class="row-actions">
+        {% if u.id != user.id %}
+        <form method="post" action="/settings/users/{{ u.id }}/delete" class="inline"
+              onsubmit="return confirm('Remove this user?')">
+          <button class="btn-link danger">Remove</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Add user</h2>
+<form method="post" action="/settings/users" class="form-narrow">
+  <label>Name<input name="name" required></label>
+  <label>Email<input name="email" type="email" required></label>
+  <label>Password (min 8 characters)<input name="password" type="password" minlength="8" required></label>
+  <label>Role
+    <select name="role">
+      <option value="staff">Staff</option>
+      <option value="admin">Admin</option>
+    </select></label>
+  <button class="btn btn-primary">Add user</button>
+</form>
+{% endblock %}

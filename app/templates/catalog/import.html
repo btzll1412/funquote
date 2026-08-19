@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Bulk import — FunQuote{% endblock %}
+{% block content %}
+<h1>Bulk catalog import</h1>
+{% if not org.ai_enabled %}
+<div class="flash flash-error">AI assist is disabled for your organization. An admin can enable it under Settings.</div>
+{% else %}
+<p class="muted">Paste a price list, vendor sheet, or any product text. The AI parses it into
+structured items; <strong>nothing is saved until you review and confirm</strong> on the next screen.</p>
+<form method="post" action="/catalog/import/parse">
+  <label>Raw product list
+    <textarea name="raw_pasted_text" rows="12" required
+      placeholder="e.g.&#10;IPC-HDW2431T, 4MP turret camera, $62, $95&#10;CAT6-1000FT | Cat6 UTP 1000ft box | 89 | 145"></textarea></label>
+  <label>Instructions for the AI (optional)
+    <textarea name="user_instructions" rows="2"
+      placeholder="e.g. First price is my cost, second is sell. Category is Cameras."></textarea></label>
+  <button class="btn btn-primary">Parse with AI</button>
+  <a class="btn" href="/catalog">Cancel</a>
+</form>
+{% endif %}
+{% endblock %}

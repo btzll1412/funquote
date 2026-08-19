@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Customers — FunQuote{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Customers</h1>
+  <a class="btn btn-primary" href="/customers/new">Add customer</a>
+</div>
+<form method="get" class="searchbar">
+  <input name="q" placeholder="Search customers…" value="{{ q }}">
+  <button class="btn">Search</button>
+</form>
+{% if customers %}
+<table class="table">
+  <thead><tr><th>Name</th><th>Company</th><th>Phone</th><th>Email</th><th></th></tr></thead>
+  <tbody>
+  {% for c in customers %}
+    <tr>
+      <td><a href="/customers/{{ c.id }}/edit">{{ c.name }}</a></td>
+      <td>{{ c.company }}</td>
+      <td>{{ c.phone }}</td>
+      <td>{{ c.email }}</td>
+      <td class="row-actions">
+        <form method="post" action="/customers/{{ c.id }}/delete" class="inline"
+              onsubmit="return confirm('Delete this customer?')">
+          <button class="btn-link danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No customers yet.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if item else 'New' }} catalog item — FunQuote{% endblock %}
+{% block content %}
+<h1>{{ 'Edit catalog item' if item else 'New catalog item' }}</h1>
+<form method="post" action="/catalog/save" class="form-narrow">
+  {% if item %}<input type="hidden" name="item_id" value="{{ item.id }}">{% endif %}
+  <label>Name<input name="name" required value="{{ item.name if item else '' }}"></label>
+  <label>SKU / model number<input name="sku" value="{{ item.sku or '' if item else '' }}"></label>
+  <label>Category<input name="category" value="{{ item.category if item else '' }}"
+         placeholder="e.g. Cameras, Access Control, Cabling"></label>
+  <label>Description<textarea name="description" rows="3">{{ item.description if item else '' }}</textarea></label>
+  <div class="form-grid-3">
+    <label>Cost price<input name="cost_price" inputmode="decimal"
+           value="{{ item.cost_price if item and item.cost_price is not none else '' }}"></label>
+    <label>Sell price<input name="sell_price" inputmode="decimal"
+           value="{{ item.sell_price if item and item.sell_price is not none else '' }}"></label>
+    <label>Markup %<input name="markup_percent" inputmode="decimal"
+           value="{{ item.markup_percent if item and item.markup_percent is not none else '' }}"></label>
+  </div>
+  <p class="muted">Enter sell price <em>or</em> markup — the other is computed from cost.</p>
+
+  <h3>Custom fields</h3>
+  <p class="muted">Industry-specific attributes (e.g. resolution, PoE class, pipe diameter).</p>
+  <div id="custom-fields">
+    {% for k, v in custom_fields.items() %}
+    <div class="cf-row">
+      <input name="cf_key" placeholder="Field" value="{{ k }}">
+      <input name="cf_value" placeholder="Value" value="{{ v }}">
+    </div>
+    {% endfor %}
+    <div class="cf-row">
+      <input name="cf_key" placeholder="Field">
+      <input name="cf_value" placeholder="Value">
+    </div>
+  </div>
+  <button type="button" class="btn btn-small" onclick="addCF()">+ Add field</button>
+  <div class="form-actions">
+    <button class="btn btn-primary">Save item</button>
+    <a class="btn" href="/catalog">Cancel</a>
+  </div>
+</form>
+<script>
+function addCF() {
+  const row = document.createElement('div');
+  row.className = 'cf-row';
+  row.innerHTML = '<input name="cf_key" placeholder="Field"><input name="cf_value" placeholder="Value">';
+  document.getElementById('custom-fields').appendChild(row);
+}
+</script>
+{% endblock %}

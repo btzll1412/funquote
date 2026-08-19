@@ -1,0 +1,18 @@
+services:
+  funquote:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      # Uncomment to use PostgreSQL instead of the bundled SQLite volume:
+      # DATABASE_URL: postgresql+psycopg://funquote:funquote@db:5432/funquote
+    volumes:
+      - funquote-data:/srv/funquote/data
+    restart: unless-stopped
+
+volumes:
+  funquote-data:

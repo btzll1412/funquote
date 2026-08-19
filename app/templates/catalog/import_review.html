@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Review import — FunQuote{% endblock %}
+{% block content %}
+<h1>Review parsed items</h1>
+<p class="muted">Edit anything below. Only checked rows are imported. Rows flagged as
+possible duplicates are unchecked by default.</p>
+<form method="post" action="/catalog/import/confirm">
+<table class="table">
+  <thead><tr><th></th><th>Name</th><th>SKU</th><th>Cost</th><th>Sell</th><th>Category</th><th>AI notes</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+  {% set p = row.parsed %}
+  <tr class="{{ 'dup-row' if row.duplicate else '' }}">
+    <td><input type="checkbox" name="include" value="{{ loop.index0 }}"
+               {{ '' if row.duplicate else 'checked' }}></td>
+    <td><input name="name" value="{{ p.name }}">
+        {% if row.duplicate %}<div class="dup-note">Possible duplicate of “{{ row.duplicate.name }}”{% if row.duplicate.sku %} ({{ row.duplicate.sku }}){% endif %}</div>{% endif %}</td>
+    <td><input name="sku" value="{{ p.sku or '' }}" class="input-sm"></td>
+    <td><input name="cost_price" value="{{ p.cost_price if p.cost_price is not none else '' }}" class="input-xs"></td>
+    <td><input name="sell_price" value="{{ p.sell_price if p.sell_price is not none else '' }}" class="input-xs"></td>
+    <td><input name="category" value="{{ p.category or '' }}" class="input-sm"></td>
+    <td class="muted small">{{ p.confidence_notes }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<button class="btn btn-primary">Import checked items</button>
+<a class="btn" href="/catalog/import">Start over</a>
+</form>
+{% endblock %}

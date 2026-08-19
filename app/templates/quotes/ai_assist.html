@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}AI-assist quote — FunQuote{% endblock %}
+{% block content %}
+<h1>✨ AI-assist quote</h1>
+{% if not org.ai_enabled %}
+<div class="flash flash-error">AI assist is disabled for your organization. An admin can enable it under Settings. You can still <a href="/quotes/new">build quotes manually</a>.</div>
+{% else %}
+<p class="muted">Paste what the customer asked for (email, text message, notes from a call).
+The AI drafts line items matched to your catalog — <strong>you review and edit everything
+before it's saved</strong>, and all pricing comes from your catalog, never the AI.</p>
+<form method="post" action="/quotes/ai-assist">
+  <label>Customer request
+    <textarea name="customer_text" rows="10" required
+      placeholder="e.g. Hi, we need 6 outdoor cameras for the warehouse, an NVR that can handle them, and about 500ft of cable run…"></textarea></label>
+  <label>Customer (optional)
+    <select name="customer_id">
+      <option value="">— none / ad hoc —</option>
+      {% for c in customers %}<option value="{{ c.id }}">{{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>{% endfor %}
+    </select></label>
+  <button class="btn btn-primary">Draft quote with AI</button>
+  <a class="btn" href="/quotes">Cancel</a>
+</form>
+{% endif %}
+{% endblock %}

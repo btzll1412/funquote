@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if customer else 'New' }} customer — FunQuote{% endblock %}
+{% block content %}
+<h1>{{ 'Edit customer' if customer else 'New customer' }}</h1>
+<form method="post" action="/customers/save" class="form-narrow">
+  {% if customer %}<input type="hidden" name="customer_id" value="{{ customer.id }}">{% endif %}
+  <label>Name<input name="name" required value="{{ customer.name if customer else '' }}"></label>
+  <label>Company<input name="company" value="{{ customer.company if customer else '' }}"></label>
+  <label>Phone<input name="phone" value="{{ customer.phone if customer else '' }}"></label>
+  <label>Email<input name="email" value="{{ customer.email if customer else '' }}"></label>
+  <label>Address<textarea name="address" rows="3">{{ customer.address if customer else '' }}</textarea></label>
+  <label>Notes<textarea name="notes" rows="3">{{ customer.notes if customer else '' }}</textarea></label>
+  <button class="btn btn-primary">Save</button>
+  <a class="btn" href="/customers">Cancel</a>
+</form>
+{% endblock %}
